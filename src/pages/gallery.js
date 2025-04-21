@@ -55,7 +55,26 @@ export async function renderGalleryPage(container) {
   
       btnContainer.appendChild(shareBtn);
       btnContainer.appendChild(deleteBtn);
-      card.appendChild(el);
+      
+      const imageWrapper = document.createElement('div');
+      imageWrapper.className = 'relative w-full h-full';
+
+      el.className += ' w-full h-full object-cover rounded';
+
+      const overlay = document.createElement('div');
+      overlay.className = 'absolute bottom-2 left-2 bg-black/60 text-white text-xs px-3 py-1 rounded-md backdrop-blur-sm shadow-md';
+      overlay.innerHTML = `
+        ${img.lat && img.lon
+          ? `📍 <a href="https://maps.google.com/?q=${img.lat},${img.lon}" target="_blank" class="underline">ver mapa</a>`
+          : '📍 Ubicación desconocida'}
+        &nbsp;|&nbsp;
+        🕒 ${img.timestamp ? new Date(img.timestamp).toLocaleString() : 'desconocida'}
+      `;
+
+      imageWrapper.appendChild(el);
+      imageWrapper.appendChild(overlay);
+
+      card.appendChild(imageWrapper);
       card.appendChild(btnContainer);
       gallery.appendChild(card);
     });
@@ -68,20 +87,36 @@ export async function renderGalleryPage(container) {
       .then(res => res.json())
       .then(async images => {
         for (const img of images) {
-          const imageUrl = `${API_URL}${img}`;
-
+          const imageUrl = `${API_URL}${img.path}`;
+      
           const card = document.createElement('div');
           card.className = 'bg-white rounded shadow flex flex-col items-center justify-center aspect-square p-4 space-y-2';
 
+          const imageWrapper = document.createElement('div');
+          imageWrapper.className = 'relative w-full h-full';
+      
           const el = document.createElement('img');
           el.src = imageUrl;
-          el.className = 'h-4/5 object-contain cursor-pointer transition hover:scale-105 duration-200';
+          el.className = 'w-full h-full object-cover rounded cursor-pointer transition hover:scale-105 duration-200';
           el.addEventListener('click', () => createModal(el.src));
-
+      
+          const overlay = document.createElement('div');
+          overlay.className = 'absolute bottom-2 left-2 bg-black/60 text-white text-xs px-3 py-1 rounded-md backdrop-blur-sm shadow-md';
+          overlay.innerHTML = `
+            ${img.latitud && img.longitud
+              ? `📍 <a href="https://maps.google.com/?q=${img.latitud},${img.longitud}" target="_blank" class="underline">ver mapa</a>`
+              : '📍 Ubicación desconocida'}
+            &nbsp;|&nbsp;
+            🕒 ${img.timestamp ? new Date(img.timestamp).toLocaleString() : 'desconocida'}
+          `;
+      
+          imageWrapper.appendChild(el);
+          imageWrapper.appendChild(overlay);
+      
+          // Botones
           const btnContainer = document.createElement('div');
           btnContainer.className = 'flex gap-2 mt-2 w-full justify-center';
-
-          // Compartir
+      
           const shareBtn = document.createElement('button');
           shareBtn.innerHTML = '📤 <span>Compartir</span>';
           shareBtn.className = 'flex items-center gap-1 justify-center bg-blue-600 text-white text-sm px-4 py-2 rounded hover:bg-blue-700 w-28';
@@ -96,19 +131,18 @@ export async function renderGalleryPage(container) {
               alert('Tu navegador no soporta la Web Share API');
             }
           });
-
-          // Eliminar
+      
           const deleteBtn = document.createElement('button');
           deleteBtn.innerHTML = '🗑️ <span>Eliminar</span>';
           deleteBtn.className = 'flex items-center gap-1 justify-center bg-red-600 text-white text-sm px-4 py-2 rounded hover:bg-red-700 w-28';
           deleteBtn.onclick = async () => {
             const confirmDelete = confirm('¿Seguro que quieres eliminar esta imagen?');
             if (confirmDelete) {
-              const filename = img.split('/').pop();
+              const filename = img.path.split('/').pop();
               const res = await fetch(`${API_URL}/delete/${filename}`, {
                 method: 'DELETE'
               });
-
+      
               if (res.ok) {
                 await deleteImageFromIndexDB(filename);
                 alert('Imagen eliminada');
@@ -118,29 +152,27 @@ export async function renderGalleryPage(container) {
               }
             }
           };
-
-          // Agrega botones al contenedor
+      
           btnContainer.appendChild(shareBtn);
           btnContainer.appendChild(deleteBtn);
-          card.appendChild(el);
+          card.appendChild(imageWrapper);
           card.appendChild(btnContainer);
           gallery.appendChild(card);
-
-          // Guardar en IndexedDB para uso offline
+      
+          // Guardar en IndexedDB (para offline)
           try {
             const blob = await fetch(imageUrl).then(r => r.blob());
-            await addImageToIndexDB(imageUrl.split('/').pop(), blob);
+            await addImageToIndexDB(
+              imageUrl.split('/').pop(),
+              blob,
+              false,
+              img.timestamp,
+              { lat: img.latitud, lon: img.longitud }
+            );
           } catch (err) {
             console.error(`Error al guardar ${imageUrl} en IndexedDB:`, err);
           }
         }
-      })
-      .catch(err => {
-        gallery.innerHTML = `
-          <div class="col-span-full text-center text-red-500">
-            Error al cargar imágenes desde el servidor.
-          </div>`;
-        console.error('Error fetching gallery:', err);
-      });
+      })      
   }
 }

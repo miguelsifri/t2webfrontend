@@ -4,8 +4,6 @@ import { API_URL } from '../config.js';
 export async function syncIndexDBWithBackend() {
   try {
     const res = await fetch(`${API_URL}/gallery`);
-    const backendImages = await res.json(); // Ej: ['/uploads/image1.jpg', ...]
-    const backendNames = backendImages.map(path => path.split('/').pop());
 
     const localImages = await getAllImagesFromIndexDB();
 
@@ -32,10 +30,6 @@ export async function syncIndexDBWithBackend() {
           console.warn(`🚫 Error de red subiendo ${localImage.nombre}:`, err);
         }
       }
-      // if (!backendNames.includes(localImage.nombre)) {
-      //   await deleteImageFromIndexDB(localImage.nombre);
-      //   console.log(`Deleted "${localImage.nombre}" from IndexedDB`);
-      // }
     }
   } catch (err) {
     console.error('Failed to sync IndexedDB:', err);

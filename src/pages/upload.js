@@ -1,6 +1,7 @@
 import { createAlert } from "../components/alert";
 import { addImageToIndexDB } from "../lib/db";
 import { API_URL } from '../config.js';
+import { getLocationAndTime } from "../utils/getLocationAndTime";
 
 export function renderUploadPage(container) {
   container.innerHTML = `
@@ -58,9 +59,14 @@ export function renderUploadPage(container) {
       window.location.hash = '#/';
       return;
     }
+
+    const { location, timestamp } = await getLocationAndTime();
   
     const formData = new FormData();
     formData.append('image', file);
+    formData.append('latitud', location?.lat ?? '');
+    formData.append('longitud', location?.lon ?? '');
+    formData.append('timestamp', timestamp);
   
     try {
       const res = await fetch(`${API_URL}/upload`, {
@@ -71,8 +77,8 @@ export function renderUploadPage(container) {
       if (res.ok) {
         const data = await res.json();
         const nombreDesdeBackend = data.path.split('/').pop();
-        await addImageToIndexDB(nombreDesdeBackend, file);
-        alert('Imagen subida y guardada localmente.');
+        await addImageToIndexDB(nombreDesdeBackend, file, false, timestamp, location);
+        alert('Imagen subida y guardada correctamente.');
         window.location.hash = '#/';
       } else {
         alert('Error al subir la imagen.');

@@ -1,5 +1,3 @@
-// src/lib/db.js
-
 import { openDB } from 'idb';
 
 
@@ -19,17 +17,20 @@ export const dbPromise = openDB('GaleriaDB', 2, {
 
 
 
-export async function addImageToIndexDB(name, blob, pending = false) {
+export async function addImageToIndexDB(name, blob, pending = false, timestamp = null, location = null) {
   const db = await dbPromise;
 
   const existing = await db.getAllFromIndex('imagenes', 'nombre');
   const exists = existing.some(img => img.nombre === name);
-  if (exists) return; // evita duplicados
+  if (exists) return;
 
   await db.put('imagenes', {
     nombre: name,
     blob,
     fecha: Date.now(),
+    timestamp,
+    lat: location?.lat ?? null,
+    lon: location?.lon ?? null,
     pending
   });
 }

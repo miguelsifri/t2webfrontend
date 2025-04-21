@@ -23,7 +23,7 @@ navigator.serviceWorker.ready.then(async (reg) => {
     applicationServerKey: urlBase64ToUint8Array('BF_rJlyHtR9-loT7pX5YEA8brsLlDtgME2ZX4dI0fu7zwrpA_8BP3xErit66X95bv8xzjYuGpw4NO_KtzDY3LZk')
   });
 
-  await fetch(`${API_URL}/suscribe`, {
+  await fetch(`${API_URL}/subscribe`, {
     method: 'POST',
     body: JSON.stringify(subscription),
     headers: {
